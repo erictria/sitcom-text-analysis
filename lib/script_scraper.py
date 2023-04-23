@@ -11,7 +11,7 @@ class ScriptScraper:
     '''
 
     main_page = 'https://subslikescript.com'
-    max_retries = 5
+    max_retries = 10
 
     def __init__(self, series_url, series_id, user_agent, acts=3, scenes=5):
         self.series_url = series_url
