@@ -47,7 +47,7 @@ class CorpusEnhancer:
 
         return self.TOKENS
 
-    def generate_enhanced_vocab(self):
+    def generate_enhanced_vocab(self, ohco):
         self.VOCAB = self.TOKENS.term_str.value_counts().to_frame('n').sort_index()
         self.VOCAB.index.name = 'term_str'
         self.VOCAB['n_chars'] = self.VOCAB.index.str.len()
@@ -89,7 +89,7 @@ class CorpusEnhancer:
         # self.VOCAB['stem_lancaster'] = self.VOCAB.apply(lambda x: stemmer3.stem(x.name), 1)
 
         # Compute TFIDF and DFIDF
-        BOW = self.__create_bow()
+        BOW = self.__create_bow(ohco)
 
         TFIDF, DFIDF = self.__compute_tfidf_dfidf()
 
@@ -105,7 +105,7 @@ class CorpusEnhancer:
 
         return self.VOCAB
     
-    def __create_bow(self):
+    def __create_bow(self, ohco):
         '''
         PURPOSE: generate a bag-of-words (BOW) dataframe given a corpus and bag level.
         
@@ -117,7 +117,7 @@ class CorpusEnhancer:
         OUTPUTS:
         BOW - a dataframe representing the bag-of-words (BOW).
         '''
-        self.BOW = self.TOKENS.groupby(self.OHCO + ['term_str'])\
+        self.BOW = self.TOKENS.groupby(ohco + ['term_str'])\
             .term_str\
             .count()\
             .to_frame('n') 
