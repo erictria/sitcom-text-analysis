@@ -12,11 +12,12 @@ class WikiScraper:
 
     quote_regex = '"([^"]*)"'
     parenthesis_regex = '\(([^)]*)\)'
+    non_numeric_regex = '[^0-9]+'
 
     def __init__(self, user_agent):
         self.user_agent = user_agent
     
-    def scrape_episode_list(self, series_url, column_map, season_limit = None):
+    def scrape_episode_list(self, series_url, column_map, series_id, season_limit = None):
         r = requests.get(
             series_url, 
             headers = {'User-agent': self.user_agent}
@@ -36,6 +37,10 @@ class WikiScraper:
             season_dfs.append(season_df)
         
         final_df = pd.concat(season_dfs)
+        final_df['series_id'] = series_id
+        final_df['episode_id'] = final_df['episode_id'].astype(int)
+        final_df['us_viewers'] = final_df['us_viewers'].astype(float)
+        final_df = final_df.set_index(['series_id', 'season_id', 'episode_id'])
         return final_df
 
     def __scrape_season_table(self, season_table, column_map):
@@ -60,9 +65,10 @@ class WikiScraper:
 
         try:
             # Handle two-part episodes
+            split_char = '-'
             episode_id_soup = ep_cols[episode_idx]
             for split in episode_id_soup.find_all('hr'):
-                    split.replace_with('|')
+                    split.replace_with(split_char)
             
             episode_id = episode_id_soup.text
             writers = ep_cols[writers_idx].text
@@ -70,8 +76,7 @@ class WikiScraper:
             date = ep_cols[date_idx].text
 
             ep_details = {
-                # 'episode_id': ep_cols[episode_idx].text,
-                'epsiode_title': re.search(self.quote_regex, title).group(1) if re.search(self.quote_regex, title) else title,
+                'episode_title': re.search(self.quote_regex, title).group(1) if re.search(self.quote_regex, title) else title,
                 'director': ep_cols[director_idx].text,
                 'writers': writers,
                 'first_writer': writers.split('&')[0].strip() if '&' in writers else writers,
@@ -80,9 +85,10 @@ class WikiScraper:
             }
 
 
+            episode_id = re.sub('[^0-9]+', split_char, episode_id)
             # Handle two-part episodes
-            if '|' in episode_id:
-                eps = episode_id.split('|')
+            if split_char in episode_id:
+                eps = episode_id.split(split_char)
                 ep_1 = eps[0]
                 ep_2 = eps[1]
 

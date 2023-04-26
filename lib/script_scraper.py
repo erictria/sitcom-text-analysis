@@ -42,6 +42,7 @@ class ScriptScraper:
         
         series_df = pd.concat(all_seasons)
         series_df['series_id'] = self.series_id
+        series_df['episode_id'] = series_df['episode_id'].astype(int)
         series_df = series_df.set_index(['series_id', 'season_id', 'episode_id', 'episode_title', 'scene_id', 'line_id'])
         
         self.corpus = series_df
@@ -66,15 +67,16 @@ class ScriptScraper:
         return self.vocab
         
     def __scrape_season(self, season_text, season_id):
-        episodes = season_text.find_all('a', href = True, title = True)
+        episodes = season_text.select('li:has(a)')
 
         all_episodes = []
         for idx, ep in enumerate(episodes):
-            episode_script = self.__scrape_episode(self.main_page + ep['href'])
+            ep_href = ep.find('a', href = True, title = True)
+            episode_script = self.__scrape_episode(self.main_page + ep_href['href'])
             episode_lines = self.__split_episode_text_scenes(episode_script)
             episode_df = pd.DataFrame(episode_lines)
-            episode_df['episode_id'] = idx + 1
-            episode_df['episode_title'] = ep.text
+            episode_df['episode_id'] = ep.text.split('.')[0]
+            episode_df['episode_title'] = ep_href.text
             
             all_episodes.append(episode_df)
         
