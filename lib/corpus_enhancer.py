@@ -47,7 +47,7 @@ class CorpusEnhancer:
 
         return self.TOKENS
 
-    def generate_enhanced_vocab(self, ohco):
+    def generate_enhanced_vocab(self, ohco, tf_method = 'sum'):
         self.VOCAB = self.TOKENS.term_str.value_counts().to_frame('n').sort_index()
         self.VOCAB.index.name = 'term_str'
         self.VOCAB['n_chars'] = self.VOCAB.index.str.len()
@@ -91,7 +91,7 @@ class CorpusEnhancer:
         # Compute TFIDF and DFIDF
         BOW = self.__create_bow(ohco)
 
-        TFIDF, DFIDF = self.__compute_tfidf_dfidf()
+        TFIDF, DFIDF = self.__compute_tfidf_dfidf(tf_method)
 
         self.BOW['tfidf'] = self.TFIDF.stack()
 
