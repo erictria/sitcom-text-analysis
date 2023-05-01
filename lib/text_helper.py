@@ -20,6 +20,11 @@ from gensim.models import word2vec
 
 import plotly_express as px
 
+from sklearn.decomposition import PCA
+from scipy.linalg import norm
+from scipy.linalg import eigh
+import plotly_express as px
+
 class TextHelper:
     
     def __init__(self):
