@@ -134,7 +134,20 @@ class TextHelper:
     
     # PCA
     
-    def compute_pca(self, X, k, norm_docs, center_by_mean, center_by_variance):
+    def get_pca_doc(self, CORPUS, VOCAB, LIB, OHCO):
+        BOW_PCA = text_helper.create_bow(CORPUS_PCA, OHCO)
+        TFIDF_PCA, DFIDF_PCA = text_helper.compute_tfidf_dfidf(BOW_PCA, tf_method = 'max')
+
+        DOC_PCA = TFIDF_PCA.stack().reset_index().rename(columns = {0: 'TFIDF'})
+        DOC_PCA = pd.merge(DOC_PCA.reset_index(), LIB.reset_index(), on = OHCO)\
+            .set_index(OHCO).drop(columns = 'index')
+
+        DOC_SUM = DOC_PCA.reset_index().groupby(OHCO).first()
+
+        return DOC_SUM, TFIDF_PCA
+
+
+    def compute_pca(self, X, DOC_SUM, k, norm_docs, center_by_mean, center_by_variance, doc_label):
         '''
         PURPOSE: compute the PCA from a given document-term count matrix
 
@@ -191,13 +204,10 @@ class TextHelper:
         # Project Docs onto Components
         DCM = X.dot(COMPS[COV.index].T) 
         DCM_DOC = pd.merge(DCM, DOC_SUM, left_index = True, right_index = True)
-        DCM_DOC['doc'] = DCM_DOC.apply(lambda x: "{0}: {1}".format(
-            x.series_name, 
-            x.name[1] #season_id
-        ), axis = 1)
+        DCM_DOC['doc'] = DCM_DOC[doc_label]
 
         return LOADINGS, DCM_DOC, COMPS
-    
+
     def vis_pcs(self, M, a, b, label='series_name', hover_name='doc', symbol=None, size=None):
         fig = px.scatter(M, f"PC{a}", f"PC{b}", color=label, hover_name=hover_name, 
                          symbol=symbol, size=size,
@@ -321,7 +331,18 @@ class TextHelper:
             coords = coords.merge(VOCAB.reset_index(), on='term_str')
             coords = coords.set_index('term_str')
         
-        return coords
+        return coords, model
+    
+    def complete_analogy(self, model, A, B, C, n=2):
+        try:
+            cols = ['term', 'sim']
+            return pd.DataFrame(model.wv.most_similar(positive=[B, C], negative=[A])[0:n], columns=cols)
+        except KeyError as e:
+            print('Error:', e)
+            return None
+
+    def get_most_similar(self, model, positive, negative=None):
+        return pd.DataFrame(model.wv.most_similar(positive, negative), columns=['term', 'sim'])
     
     def plot_word_embeddings(self, coordinates):
         px.scatter(coordinates.reset_index(), 'x', 'y', 
