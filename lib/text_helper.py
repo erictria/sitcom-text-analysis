@@ -222,9 +222,9 @@ class TextHelper:
     
     # TOPIC MODELS
     
-    def generate_topic_model(self, BAG, TOKENS, ngram_range, n_terms, n_topics, max_iter, n_top_terms, remove_stop=True):
+    def generate_topic_model(self, BAG, TOKENS, ngram_range, n_terms, n_topics, max_iter, n_top_terms, remove_stop=True, tokens_filter=['NN', 'NNS'], max_df=0.7):
         # filter for nouns
-        DOCS = TOKENS[TOKENS.pos.isin(['NN', 'NNS'])]\
+        DOCS = TOKENS[TOKENS.pos.isin(tokens_filter)]\
             .groupby(BAG).term_str\
             .apply(lambda x: ' '.join(x))\
             .to_frame()\
@@ -236,7 +236,7 @@ class TextHelper:
 
         # create vector space
 
-        count_engine = CountVectorizer(max_features=n_terms, ngram_range=ngram_range, stop_words='english')
+        count_engine = CountVectorizer(max_features=n_terms, ngram_range=ngram_range, stop_words='english', max_df=max_df)
         count_model = count_engine.fit_transform(DOCS.doc_str)
         TERMS = count_engine.get_feature_names_out()
 
