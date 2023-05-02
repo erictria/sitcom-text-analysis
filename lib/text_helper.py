@@ -25,6 +25,8 @@ from scipy.linalg import norm
 from scipy.linalg import eigh
 import plotly_express as px
 
+from IPython.display import display, HTML
+
 class TextHelper:
     
     def __init__(self):
@@ -135,8 +137,8 @@ class TextHelper:
     # PCA
     
     def get_pca_doc(self, CORPUS, VOCAB, LIB, OHCO):
-        BOW_PCA = text_helper.create_bow(CORPUS_PCA, OHCO)
-        TFIDF_PCA, DFIDF_PCA = text_helper.compute_tfidf_dfidf(BOW_PCA, tf_method = 'max')
+        BOW_PCA = self.create_bow(CORPUS, OHCO)
+        TFIDF_PCA, DFIDF_PCA = self.compute_tfidf_dfidf(BOW_PCA, tf_method = 'max')
 
         DOC_PCA = TFIDF_PCA.stack().reset_index().rename(columns = {0: 'TFIDF'})
         DOC_PCA = pd.merge(DOC_PCA.reset_index(), LIB.reset_index(), on = OHCO)\
@@ -222,7 +224,7 @@ class TextHelper:
     
     # TOPIC MODELS
     
-    def generate_topic_model(self, BAG, TOKENS, ngram_range, n_terms, n_topics, max_iter, n_top_terms, remove_stop=True, tokens_filter=['NN', 'NNS'], max_df=0.7):
+    def generate_topic_model(self, BAG, TOKENS, ngram_range, n_terms, n_topics, max_iter, n_top_terms, remove_stop=True, tokens_filter=['NN', 'NNS'], max_df=1.0, min_df=1):
         # filter for nouns
         DOCS = TOKENS[TOKENS.pos.isin(tokens_filter)]\
             .groupby(BAG).term_str\
@@ -236,7 +238,7 @@ class TextHelper:
 
         # create vector space
 
-        count_engine = CountVectorizer(max_features=n_terms, ngram_range=ngram_range, stop_words='english', max_df=max_df)
+        count_engine = CountVectorizer(max_features=n_terms, ngram_range=ngram_range, stop_words='english', max_df=max_df, min_df=min_df)
         count_model = count_engine.fit_transform(DOCS.doc_str)
         TERMS = count_engine.get_feature_names_out()
 
@@ -345,7 +347,7 @@ class TextHelper:
         return pd.DataFrame(model.wv.most_similar(positive, negative), columns=['term', 'sim'])
     
     def plot_word_embeddings(self, coordinates):
-        px.scatter(coordinates.reset_index(), 'x', 'y', 
+        fig = px.scatter(coordinates.reset_index(), 'x', 'y', 
            text='term_str', 
            color='pos_group', 
            hover_name='term_str',          
@@ -354,21 +356,46 @@ class TextHelper:
                 mode='markers+text', 
                 textfont=dict(color='black', size=14, family='Arial'),
                 textposition='top center')
+        
+        fig.show()
     
     # SENTIMENT ANALYSIS
     
-    def generate_sentiments(self, VOCAB, BOW, SALEX, OHCO):
-        V = pd.concat([VOCAB.reset_index().set_index('term_str'), SALEX], join='inner', axis=1) #\
-            # .reset_index().set_index('term_id')
+    def generate_sentiments(self, VOCAB, SALEX, OHCO):
+        V = pd.concat([VOCAB.reset_index().set_index('term_str'), SALEX], join='inner', axis=1)
         
         emo_cols = "anger anticipation disgust fear joy sadness surprise trust sentiment".split()
-        B = BOW.join(V[['max_pos'] + emo_cols], on='term_str', rsuffix='_v').dropna()
         
         for col in emo_cols:
-            B[col] = B[col] * B.tfidf
+            V[col] = V[col] * V.tfidf
         
-        EMO = B.groupby(OHCO)[emo_cols].mean()
+        EMO = V.groupby(OHCO)[emo_cols].mean()
         
         EMO_thin = EMO.stack().to_frame().reset_index().rename(columns={0:'value', 'level_{}'.format(len(OHCO)): 'emo'})
         
         return EMO, EMO_thin
+    
+    def sample_sentences(self, SA_DF, OHCO):
+        
+        emo_cols = "anger anticipation disgust fear joy sadness surprise trust sentiment".split()
+        
+        SA_OHCO = SA_DF.groupby(OHCO)[emo_cols].mean()
+        
+        SA_OHCO['line_str'] = SA_DF.groupby(OHCO).term_str.apply(lambda x: x.str.cat(sep=' '))
+        SA_OHCO['html_str'] = SA_DF.groupby(OHCO).html.apply(lambda x: x.str.cat(sep=' '))
+        
+        rows = []
+        for idx in SA_OHCO.sample(20).index:
+
+            valence = round(SA_OHCO.loc[idx, emo], 4)     
+            t = 0
+            if valence > t: color = '#ccffcc'
+            elif valence < t: color = '#ffcccc'
+            else: color = '#f2f2f2'
+            z=0
+            rows.append("""<tr style="background-color:{0};padding:.5rem 1rem;font-size:110%;">
+            <td>{1}</td><td>{3}</td><td width="400" style="text-align:left;">{2}</td>
+            </tr>""".format(color, valence, SA_OHCO.loc[idx, 'html_str'], idx))
+
+        display(HTML('<style>#sample1 td{font-size:120%;vertical-align:top;} .sent-1{color:red;font-weight:bold;} .sent1{color:green;font-weight:bold;}</style>'))
+        display(HTML('<table id="sample1"><tr><th>Sentiment</th><th>ID</th><th width="600">Sentence</th></tr>'+''.join(rows)+'</table>'))
