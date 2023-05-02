@@ -2,9 +2,9 @@ import pandas as pd
 import numpy as np
 
 import nltk
-# from nltk.stem.porter import PorterStemmer
-# from nltk.stem.snowball import SnowballStemmer
-# from nltk.stem.lancaster import LancasterStemmer
+from nltk.stem.porter import PorterStemmer
+from nltk.stem.snowball import SnowballStemmer
+from nltk.stem.lancaster import LancasterStemmer
 
 class CorpusEnhancer:
     '''
@@ -78,15 +78,15 @@ class CorpusEnhancer:
         self.VOCAB['stop'] = self.VOCAB.index.map(sw.dummy)
         self.VOCAB['stop'] = self.VOCAB['stop'].fillna(0).astype('int')
 
-        # # Add stems
-        # stemmer1 = PorterStemmer()
-        # self.VOCAB['stem_porter'] = self.VOCAB.apply(lambda x: stemmer1.stem(x.name), 1)
+        # Add stems
+        stemmer1 = PorterStemmer()
+        self.VOCAB['stem_porter'] = self.VOCAB.apply(lambda x: stemmer1.stem(x.name), 1)
 
-        # stemmer2 = SnowballStemmer('english')
-        # self.VOCAB['stem_snowball'] = self.VOCAB.apply(lambda x: stemmer2.stem(x.name), 1)
+        stemmer2 = SnowballStemmer('english')
+        self.VOCAB['stem_snowball'] = self.VOCAB.apply(lambda x: stemmer2.stem(x.name), 1)
 
-        # stemmer3 = LancasterStemmer()
-        # self.VOCAB['stem_lancaster'] = self.VOCAB.apply(lambda x: stemmer3.stem(x.name), 1)
+        stemmer3 = LancasterStemmer()
+        self.VOCAB['stem_lancaster'] = self.VOCAB.apply(lambda x: stemmer3.stem(x.name), 1)
 
         # Compute TFIDF and DFIDF
         BOW = self.__create_bow(ohco)

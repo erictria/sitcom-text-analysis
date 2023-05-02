@@ -361,15 +361,17 @@ class TextHelper:
     
     # SENTIMENT ANALYSIS
     
-    def generate_sentiments(self, VOCAB, SALEX, OHCO):
-        V = pd.concat([VOCAB.reset_index().set_index('term_str'), SALEX], join='inner', axis=1)
+    def generate_sentiments(self, VOCAB, BOW, SALEX, OHCO):
+        V = pd.concat([VOCAB, SALEX], join='inner', axis=1)
         
         emo_cols = "anger anticipation disgust fear joy sadness surprise trust sentiment".split()
         
-        for col in emo_cols:
-            V[col] = V[col] * V.tfidf
+        B = BOW.join(V[['max_pos'] + emo_cols], on='term_str', rsuffix='_v').dropna()
         
-        EMO = V.groupby(OHCO)[emo_cols].mean()
+        for col in emo_cols:
+            B[col] = B[col] * B.tfidf
+        
+        EMO = B.groupby(OHCO)[emo_cols].mean()
         
         EMO_thin = EMO.stack().to_frame().reset_index().rename(columns={0:'value', 'level_{}'.format(len(OHCO)): 'emo'})
         
