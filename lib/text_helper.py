@@ -205,6 +205,7 @@ class TextHelper:
 
         # Project Docs onto Components
         DCM = X.dot(COMPS[COV.index].T) 
+        
         DCM_DOC = pd.merge(DCM, DOC_SUM, left_index = True, right_index = True)
         DCM_DOC['doc'] = DCM_DOC[doc_label]
 
