@@ -375,7 +375,15 @@ class TextHelper:
         
         EMO_thin = EMO.stack().to_frame().reset_index().rename(columns={0:'value', 'level_{}'.format(len(OHCO)): 'emo'})
         
-        return EMO, EMO_thin
+        return EMO, EMO_thin, B
+    
+    def plot_sentiments(self, df, emo='sentiment'):
+        FIG = dict(figsize=(25, 5), legend=True, fontsize=14, rot=45)
+        df[emo].plot(**FIG)
+    
+    def plot_thin_sentiments(self, df):
+        fig = px.line(df, x='season_id', y='value', color='emo')
+        fig.show()
     
     def sample_sentences(self, SA_DF, OHCO):
         
