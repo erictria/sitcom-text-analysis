@@ -1,3 +1,5 @@
+# Eric Tria (emt4wf@virginia.edu) DS 5001 Spring 2023
+
 import numpy as np
 import pandas as pd
 
@@ -225,17 +227,13 @@ class TextHelper:
     
     # TOPIC MODELS
     
-    def generate_topic_model(self, BAG, TOKENS, ngram_range, n_terms, n_topics, max_iter, n_top_terms, remove_stop=True, tokens_filter=['NN', 'NNS'], max_df=1.0, min_df=1):
+    def generate_topic_model(self, BAG, TOKENS, ngram_range, n_terms, n_topics, max_iter, n_top_terms, tokens_filter=['NN', 'NNS'], max_df=1.0, min_df=1):
         # filter for nouns
         DOCS = TOKENS[TOKENS.pos.isin(tokens_filter)]\
             .groupby(BAG).term_str\
             .apply(lambda x: ' '.join(x))\
             .to_frame()\
             .rename(columns={'term_str':'doc_str'})
-        
-        if remove_stop:
-            sw = nltk.corpus.stopwords.words('english')
-            DOCS = DOCS[~DOCS.doc_str.isin(sw)]
 
         # create vector space
 

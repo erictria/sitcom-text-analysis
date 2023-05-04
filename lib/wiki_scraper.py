@@ -1,3 +1,5 @@
+# Eric Tria (emt4wf@virginia.edu) DS 5001 Spring 2023
+
 import pandas as pd
 import requests
 import time
@@ -15,9 +17,27 @@ class WikiScraper:
     non_numeric_regex = '[^0-9]+'
 
     def __init__(self, user_agent):
+        '''
+        Purpose: Initiates the class
+        
+        INPUTS:
+        user_agent - str user agent used for web scraping
+        '''
         self.user_agent = user_agent
     
     def scrape_episode_list(self, series_url, column_map, series_id, season_limit = None):
+        '''
+        Purpose: Scrapes full details from the Wiki episode list page
+        
+        INPUTS:
+        series_url - str Wiki episode list url
+        column_map - dict mapping of the columns to be scraped
+        series_id - str series id
+        season_limit - int limit of seasons to scrape
+        
+        OUTPUTS:
+        final_df - Pandas dataframe with the episode details
+        '''
         r = requests.get(
             series_url, 
             headers = {'User-agent': self.user_agent}
@@ -44,6 +64,16 @@ class WikiScraper:
         return final_df
 
     def __scrape_season_table(self, season_table, column_map):
+        '''
+        Purpose: Private method for scraping the season tables
+        
+        INPUT:
+        season_table - bs4 soup of season table
+        column_map - dict of column mapping
+        
+        OUTPUT:
+        season_ep_details - list of dict
+        '''
         season_eps = season_table.find_all('tr', {'class': 'vevent'})
 
         season_ep_details = []
@@ -54,6 +84,16 @@ class WikiScraper:
         return season_ep_details
     
     def __scrape_season_ep(self, season_ep, column_map):
+        '''
+        Purpose: Private method for scraping the rows of the season table
+        
+        INPUT:
+        season_ep - bs4 soup of episode row
+        column_map - dict of column mapping
+        
+        OUTPUT:
+        ep_details - dict of scraped information per episode
+        '''
         ep_cols = season_ep.find_all('td')
 
         episode_idx = column_map['episode_id']

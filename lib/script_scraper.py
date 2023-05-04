@@ -1,3 +1,5 @@
+# Eric Tria (emt4wf@virginia.edu) DS 5001 Spring 2023
+
 import pandas as pd
 import requests
 import time
@@ -14,6 +16,16 @@ class ScriptScraper:
     max_retries = 10
 
     def __init__(self, series_url, series_id, user_agent, acts=3, scenes=5):
+        '''
+        Purpose: Initiates the class
+        
+        INPUTS:
+        series_url - str series sublikescript url
+        series_id - str series id
+        user_agent - str user agent used for web scraping
+        acts - int default 3
+        scenes - int default 5
+        '''
         self.series_url = series_url
         self.series_id = series_id
         self.user_agent = user_agent
@@ -21,6 +33,15 @@ class ScriptScraper:
         self.scenes = scenes
     
     def generate_corpus(self, season_limit=None):
+        '''
+        Purpose: Generates the corpus of lines
+        
+        INPUTS:
+        season_limit - int number of seasons to scrape
+        
+        OUTPUTS:
+        corpus - Pandas dataframe of lines
+        '''
         home_request = requests.get(
             self.series_url, 
             headers = {'User-agent': self.user_agent}
@@ -49,6 +70,12 @@ class ScriptScraper:
         return self.corpus
     
     def generate_tokens(self):
+        '''
+        Purpose: Generates the corpus of tokens
+        
+        OUTPUTS:
+        tokens - Pandas dataframe of tokens
+        '''
         # generate tokens
         tokens_df = self.corpus.line.str.split(expand = True).stack().to_frame('token_str')
         tokens_df.index.names = ['series_id', 'season_id', 'episode_id', 'episode_title', 'scene_id', 'line_id', 'token_id']
@@ -60,6 +87,12 @@ class ScriptScraper:
         return self.tokens
     
     def generate_vocab(self):
+        '''
+        Purpose: Generates the basic VOCAB table with term counts
+        
+        OUTPUTS:
+        vocab - Pandas dataframe with VOCAB
+        '''
         vocab_df = self.tokens.term_str.value_counts().to_frame('n')
         vocab_df.index.name = 'term_str'
         
@@ -67,6 +100,16 @@ class ScriptScraper:
         return self.vocab
         
     def __scrape_season(self, season_text, season_id):
+        '''
+        Purpose: Private method for scraping the seasons
+        
+        INPUTS:
+        season_text - raw text for season
+        season_id - int season id
+        
+        OUTPUT:
+        season_df - Pandas dataframe of scraped season data
+        '''
         episodes = season_text.select('li:has(a)')
 
         all_episodes = []
@@ -86,6 +129,15 @@ class ScriptScraper:
         return season_df
     
     def __scrape_episode(self, episode_url):
+        '''
+        Purpose: Private methods for scraping the episodes
+        
+        INPUT:
+        episode_url - str episode url
+        
+        OUTPUT:
+        episode_script_text - raw text for episode scripts
+        '''
         episode_script_text = ''
         retry = 0
         while retry < self.max_retries:
@@ -111,6 +163,15 @@ class ScriptScraper:
         return episode_script_text
     
     def __split_episode_text_scenes(self, episode_text):
+        '''
+        Purpose: Private method for splitting episodes to scenes
+        
+        INPUT:
+        episode_text - raw text for episode script
+        
+        OUTPUT:
+        all_splits - list of split text
+        '''
         ep_lines = episode_text.split('\n')
         ep_lines = list(filter(None, ep_lines))
         
@@ -135,6 +196,15 @@ class ScriptScraper:
         return all_splits
     
     def __split_episode_text_acts(self, episode_text):
+        '''
+        Purpose: Private method for splitting episodes into scenes and acts
+        
+        INPUT:
+        episode_text - raw text for episode script
+        
+        OUTPUT:
+        all_splits - list of split text
+        '''
         ep_lines = episode_text.split('\n')
         ep_lines = list(filter(None, ep_lines))
         
@@ -165,6 +235,16 @@ class ScriptScraper:
         return all_splits
 
     def __split(self, a, n):
+        '''
+        Purpose: Helper function for splitting a list into chunks
+        
+        INPUT:
+        a - list
+        n - int desired number of chunks
+        
+        OUTPUT:
+        list of lists
+        '''
         k, m = divmod(len(a), n)
 
         return (a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n))
