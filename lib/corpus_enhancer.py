@@ -11,13 +11,33 @@ from nltk.stem.lancaster import LancasterStemmer
 class CorpusEnhancer:
     '''
     A class that adds additional details to CORPUS and VOCAB tables
+    
+    Code for these functions are based off of the code provided by Prof. Rafael Alvarado for DS 5001
     '''
 
     def __init__(self, corpus, ohco):
+        '''
+        Purpose: Initiates the class
+        
+        INPUTS:
+        corpus - Pandas dataframe of tokens
+        ohco - List of OHCO level to use
+        '''
         self.TOKENS = corpus
         self.OHCO = ohco
     
     def enhance_corpus(self, strip_hyphens, strip_whitespace, use_nltk):
+        '''
+        Purpose: Add more features to tokens corpus
+        
+        INPUTS:
+        strip_hyphens - boolean flag to strip hyphens
+        strip_whitespace - boolean flag to strip whitespace
+        use_nltk - boolean flag to use nltk specific functions
+        
+        OUTPUTS:
+        tokens - Pandas dataframe of tokens
+        '''
         # use ohco here
         if strip_hyphens == True:
             self.TOKENS.token_str = self.TOKENS.token_str.str.replace(r"-", ' ')
@@ -50,6 +70,16 @@ class CorpusEnhancer:
         return self.TOKENS
 
     def generate_enhanced_vocab(self, ohco, tf_method = 'sum'):
+        '''
+        Purpose: Enhance VOCAB table by adding metrics related to TFIDF
+        
+        INPUTS:
+        ohco - list of OHCO level used
+        tf_method - string method used for computing TFIDF
+        
+        OUTPUS:
+        vocab - Pandas dataframe of enhanced vocab features
+        '''
         self.VOCAB = self.TOKENS.term_str.value_counts().to_frame('n').sort_index()
         self.VOCAB.index.name = 'term_str'
         self.VOCAB['n_chars'] = self.VOCAB.index.str.len()

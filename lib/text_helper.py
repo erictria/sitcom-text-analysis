@@ -30,8 +30,17 @@ import plotly_express as px
 from IPython.display import display, HTML
 
 class TextHelper:
+    '''
+    A class that contains helper functions used to conduct various text analyses
+    
+    Code for these functions are based off of the code provided by Prof. Rafael Alvarado for DS 5001
+    '''
     
     def __init__(self):
+        '''
+        Purpose: Initiate the class
+        '''
+        
         pass
     
     def create_bow(self, TOKENS, ohco):
@@ -46,6 +55,7 @@ class TextHelper:
         OUTPUTS:
         BOW - a dataframe representing the bag-of-words (BOW).
         '''
+        
         BOW = TOKENS.groupby(ohco + ['term_str'])\
             .term_str\
             .count()\
@@ -64,6 +74,7 @@ class TextHelper:
         
         OUTPUTS:
         TFIDF - Term Frequency Inverse Document Frequency 
+        DFIDF - Document Frequency Inverse Document Frequency 
         '''
         
         # We create a document-term count matrix simply by unstacking the BOW
@@ -105,6 +116,17 @@ class TextHelper:
     # CLUSTERING FUNCTIONS
     
     def generate_clustering_pairs(self, TFIDF_COLLAPSED, LIB):
+        '''
+        Purpose: Generate clustering pairs using various distance metrics
+        
+        INPUTS:
+        TFIDF_COLLAPSED - Pandas dataframe of TFIDF values
+        LIB - Pandas dataframe of LIB info
+        
+        OUTPUTS:
+        PAIRS - Pandas dataframe of clustering pairs
+        '''
+        
         L0 = TFIDF_COLLAPSED.astype('bool').astype('int') # Binary (Pseudo L)
         L1 = TFIDF_COLLAPSED.apply(lambda x: x / x.sum(), 1) # Probabilistic
         L2 = TFIDF_COLLAPSED.apply(lambda x: x / norm(x), 1) # Pythagorean / Euclidean
@@ -122,6 +144,10 @@ class TextHelper:
         return PAIRS
     
     def hca(self, LIB, sims, linkage_method='complete', color_thresh=.3, figsize=(10, 10)):
+        '''
+        Purpose: visualize clustering diagrams
+        '''
+        
         tree = sch.linkage(sims, method=linkage_method)
         labels = LIB.series_season.values ## edit this
         plt.figure()
@@ -139,6 +165,10 @@ class TextHelper:
     # PCA
     
     def get_pca_doc(self, CORPUS, VOCAB, LIB, OHCO):
+        '''
+        Purpose: Generate the DOC_SUM and TFIDF dataframes needed for PCA
+        '''
+        
         BOW_PCA = self.create_bow(CORPUS, OHCO)
         TFIDF_PCA, DFIDF_PCA = self.compute_tfidf_dfidf(BOW_PCA, tf_method = 'max')
 
@@ -165,8 +195,9 @@ class TextHelper:
         OUTPUTS:
         LOADINGS - The term-component matrix (dataframe)
         DCM - The document-component matrix (dataframe)
-        COMPINS - The component information table (dataframe)
+        COMPS - The component information table (dataframe)
         '''
+        
         if norm_docs:
             X = (X.T / norm(X, 2, axis=1)).T
 
@@ -214,12 +245,20 @@ class TextHelper:
         return LOADINGS, DCM_DOC, COMPS
 
     def vis_pcs(self, M, a, b, label='series_name', hover_name='doc', symbol=None, size=None):
+        '''
+        Purpose: visualize principal components for PCA
+        '''
+        
         fig = px.scatter(M, f"PC{a}", f"PC{b}", color=label, hover_name=hover_name, 
                          symbol=symbol, size=size,
                          marginal_x='box', height=800)
         fig.show()
 
     def vis_loadings(self, M, VOCAB, a=0, b=1, hover_name='term_str'):
+        '''
+        Purpose: visualize the loadings for PCA
+        '''
+        
         X = M.join(VOCAB)
         return px.scatter(X.reset_index(), f"PC{a}", f"PC{b}", 
                           text='term_str', size='i', color='max_pos', 
@@ -228,6 +267,10 @@ class TextHelper:
     # TOPIC MODELS
     
     def generate_topic_model(self, BAG, TOKENS, ngram_range, n_terms, n_topics, max_iter, n_top_terms, tokens_filter=['NN', 'NNS'], max_df=1.0, min_df=1):
+        '''
+        Purpose: Generate the THETA, PHI, and TOPICS tables for topic modeling
+        '''
+        
         # filter for nouns
         DOCS = TOKENS[TOKENS.pos.isin(tokens_filter)]\
             .groupby(BAG).term_str\
@@ -287,6 +330,10 @@ class TextHelper:
     # WORD EMBEDDINGS
     
     def generate_word_embeddings(self, CORPUS, OHCO, w2v_params):
+        '''
+        Purpose: Generate the coordinates and model for word2vec
+        '''
+        
         # Extract VOCAB
         VOCAB = CORPUS.term_str.value_counts().to_frame('n').sort_index()
         VOCAB.index.name = 'term_str'
@@ -335,6 +382,10 @@ class TextHelper:
         return coords, model
     
     def complete_analogy(self, model, A, B, C, n=2):
+        '''
+        Purpose: Compute analogies for values in the word2vec
+        '''
+        
         try:
             cols = ['term', 'sim']
             return pd.DataFrame(model.wv.most_similar(positive=[B, C], negative=[A])[0:n], columns=cols)
@@ -343,9 +394,17 @@ class TextHelper:
             return None
 
     def get_most_similar(self, model, positive, negative=None):
+        '''
+        Purpose: Get similar words using the word2vec
+        '''
+        
         return pd.DataFrame(model.wv.most_similar(positive, negative), columns=['term', 'sim'])
     
     def plot_word_embeddings(self, coordinates):
+        '''
+        Purpose: Visualize the word embeddings
+        '''
+        
         fig = px.scatter(coordinates.reset_index(), 'x', 'y', 
            text='term_str', 
            color='pos_group', 
@@ -361,6 +420,10 @@ class TextHelper:
     # SENTIMENT ANALYSIS
     
     def generate_sentiments(self, VOCAB, BOW, SALEX, OHCO):
+        '''
+        Purpose: Generate the emotion values given an OHCO level
+        '''
+        
         V = pd.concat([VOCAB, SALEX], join='inner', axis=1)
         
         emo_cols = "anger anticipation disgust fear joy sadness surprise trust sentiment".split()
@@ -377,14 +440,25 @@ class TextHelper:
         return EMO, EMO_thin, B
     
     def plot_sentiments(self, df, emo='sentiment'):
+        '''
+        Purpose: Plot the sentiment analysis values
+        '''
+        
         FIG = dict(figsize=(25, 5), legend=True, fontsize=14, rot=45)
         df[emo].plot(**FIG)
     
     def plot_thin_sentiments(self, df):
+        '''
+        Purpose: Plot the sentiment analysis values
+        '''
+        
         fig = px.line(df, x='season_id', y='value', color='emo')
         fig.show()
     
     def sample_sentences(self, SA_DF, OHCO):
+        '''
+        Purpose: Sample documents with the sentiments highlighted
+        '''
         
         emo_cols = "anger anticipation disgust fear joy sadness surprise trust sentiment".split()
         

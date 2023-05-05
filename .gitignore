@@ -2,9 +2,11 @@
 *__pycache__*
 *.ipynb_checkpoints
 */.ipynb_checkpoints/*
+*archive*
 *.pyc
 *.env
 *.csv
 *.txt
 *.pdf
 *.html
+*.png
